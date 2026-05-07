@@ -131,10 +131,29 @@ local function fmt_blame_row(e)
     sha, author, fmt_date(e.author_time))
 end
 
--- gB: full-file blame as a left-side, scroll-bound split.
+-- Per-buffer state so M.file() can toggle. buf_id -> { blame_win, code_win }.
+local active = {}
+
+local function close_active(buf)
+  local s = active[buf]
+  if not s then return false end
+  if vim.api.nvim_win_is_valid(s.code_win) then
+    vim.wo[s.code_win].scrollbind = false
+  end
+  if vim.api.nvim_win_is_valid(s.blame_win) then
+    pcall(vim.api.nvim_win_close, s.blame_win, true)
+  end
+  active[buf] = nil
+  return true
+end
+
+-- gB: full-file blame as a left-side, scroll-bound split. Toggles: a second
+-- invocation with the same buffer current closes the split.
 function M.file()
   local info = buf_info_or_warn()
   if not info then return end
+  if close_active(info.buf) then return end
+
   local res = vim.system({
     "git", "-C", info.cwd, "blame", "--line-porcelain", "--", info.file,
   }, { text = true }):wait()
@@ -188,12 +207,23 @@ function M.file()
 
   ui.apply_highlights(blame_buf, hls)
 
-  local close = function()
-    if vim.api.nvim_win_is_valid(code_win) then
-      vim.wo[code_win].scrollbind = false
-    end
-    pcall(vim.api.nvim_win_close, blame_win, true)
-  end
+  active[info.buf] = { blame_win = blame_win, code_win = code_win }
+
+  -- Clean up state if the blame window is closed via any path (`:q`, etc.).
+  vim.api.nvim_create_autocmd("WinClosed", {
+    pattern = tostring(blame_win),
+    once = true,
+    callback = function()
+      if active[info.buf] and active[info.buf].blame_win == blame_win then
+        if vim.api.nvim_win_is_valid(code_win) then
+          vim.wo[code_win].scrollbind = false
+        end
+        active[info.buf] = nil
+      end
+    end,
+  })
+
+  local close = function() close_active(info.buf) end
   vim.keymap.set("n", "q", close, { buffer = blame_buf, nowait = true, silent = true })
   vim.keymap.set("n", "<Esc>", close, { buffer = blame_buf, nowait = true, silent = true })
   vim.keymap.set("n", "<CR>", function()
