@@ -1,16 +1,78 @@
 -- baka.remote: open the current line (or visual range) in the browser
--- on the repo's remote. Supports GitHub-style and GitLab-style URLs.
+-- on the repo's remote. Resolves SSH host aliases (~/.ssh/config) so
+-- enterprise SSO setups like `git@org-sso:org/repo` work correctly.
 local exec = require("baka.exec")
 
 local M = {}
+
+M.config = { host_map = {} }
+
+function M.setup(opts)
+  M.config = vim.tbl_deep_extend("force", M.config, opts or {})
+end
+
+-- Parse ~/.ssh/config and return a map of `Host` alias -> `HostName` value.
+-- Wildcards and Match-blocks are ignored. Does not perform `Include`.
+local cached_ssh_map
+local function ssh_host_map()
+  if cached_ssh_map then return cached_ssh_map end
+  local map = {}
+  local path = vim.fn.expand("~/.ssh/config")
+  if vim.fn.filereadable(path) == 0 then
+    cached_ssh_map = map
+    return map
+  end
+  local current_hosts = {}
+  for raw in io.lines(path) do
+    local line = raw:gsub("^%s+", ""):gsub("%s*#.*$", "")
+    if line ~= "" then
+      local key, val = line:match("^(%S+)%s+(.+)$")
+      if key then
+        key = key:lower()
+        val = val:gsub("%s+$", "")
+        if key == "host" then
+          current_hosts = {}
+          for h in val:gmatch("%S+") do
+            if not h:match("[%*%?]") then
+              current_hosts[#current_hosts + 1] = h
+            end
+          end
+        elseif key == "hostname" then
+          for _, h in ipairs(current_hosts) do
+            map[h] = val
+          end
+        end
+      end
+    end
+  end
+  cached_ssh_map = map
+  return map
+end
+
+local function resolve_host(host)
+  return (M.config.host_map and M.config.host_map[host])
+    or ssh_host_map()[host]
+    or host
+end
 
 local function remote_url(cwd)
   local ok, lines = exec.git_lines({ "remote", "get-url", "origin" }, cwd)
   if not ok or #lines == 0 then return nil end
   local url = lines[1]
-  url = url:gsub("^git@([^:]+):", "https://%1/")
-  url = url:gsub("%.git$", "")
-  return url
+
+  -- git@host:org/repo  ->  https://<resolved-host>/org/repo
+  local host, path = url:match("^git@([^:]+):(.+)$")
+  if host then
+    url = "https://" .. resolve_host(host) .. "/" .. path
+  else
+    -- ssh://git@host/org/repo  ->  https://<resolved-host>/org/repo
+    local h2, p2 = url:match("^ssh://git@([^/]+)/(.+)$")
+    if h2 then
+      url = "https://" .. resolve_host(h2) .. "/" .. p2
+    end
+  end
+
+  return (url:gsub("%.git$", ""))
 end
 
 local function head_sha(cwd)

@@ -5,15 +5,17 @@ remote-open — in floating popups that inherit your colorscheme.
 
 ## Features
 
-- **`<leader>gb`** — blame the current line in a cursor-anchored popup
-  (sha, author, date, summary). Auto-closes on movement.
-- **`<leader>gB`** — full-file blame in a left-side, scroll-bound split.
-  Press `<CR>` on a line to view that commit's diff.
-- **`<leader>gH`** — last 20 commits touching the current file in a
-  centered popup. In visual mode, scopes to the selected line range
-  (`git log -L`).
-- **`<leader>gg`** — open the current line (or visual range) in the
-  browser on GitHub or GitLab.
+- **`<leader>bb`** — Baka git blame line. Cursor-anchored popup with
+  sha, author, date, and commit summary. Auto-closes on movement.
+- **`<leader>bB`** — Baka git blame file. Toggles a left-side,
+  scroll-bound full-file blame split. Press `<CR>` on a row to view
+  that commit's diff. Same key closes it.
+- **`<leader>bh`** — Baka git history. Last 20 commits touching the
+  current file in a centered popup. In visual mode, scopes to the
+  selected line range (`git log -L`).
+- **`<leader>bo`** — Baka git open in remote. Opens the current line
+  (or visual range) in the browser on GitHub or GitLab. Resolves SSH
+  host aliases from `~/.ssh/config`, so SSO setups work.
 
 `q` or `<Esc>` closes any popup.
 
@@ -93,10 +95,17 @@ Defaults shown:
 ```lua
 require("baka").setup({
   keymaps = {
-    blame_line = "<leader>gb",
-    blame_file = "<leader>gB",
-    history    = "<leader>gH",
-    remote     = "<leader>gg",
+    blame_line = "<leader>bb",
+    blame_file = "<leader>bB",
+    history    = "<leader>bh",
+    remote     = "<leader>bo",
+  },
+  remote = {
+    -- SSH host aliases -> real hostnames. Auto-resolved from ~/.ssh/config;
+    -- entries here take precedence. Useful for enterprise SSO setups.
+    host_map = {
+      -- ["github-work"] = "github.com",
+    },
   },
 })
 ```
@@ -106,7 +115,7 @@ always available:
 
 ```
 :Baka line          -- blame current line popup
-:Baka blame         -- full-file blame split
+:Baka blame         -- full-file blame split (toggle)
 :Baka history       -- file history popup (also accepts a :range)
 :'<,'>Baka history  -- range-scoped history (git log -L)
 :Baka remote        -- open in browser
@@ -132,7 +141,8 @@ standard groups so any colorscheme works out of the box:
 Override any of them after `setup()`:
 
 ```lua
-vim.api.nvim_set_hl(0, "BakaSha", { fg = "#f5a97f", bold = true })
+vim.api.nvim_set_hl(0, "BakaBorder", { fg = "#78a9ff" })
+vim.api.nvim_set_hl(0, "BakaSha",    { fg = "#f5a97f", bold = true })
 ```
 
 ## Why `baka`?
