@@ -10,9 +10,11 @@ remote-open — in floating popups that inherit your colorscheme.
 - **`<leader>bB`** — Baka git blame file. Toggles a left-side,
   scroll-bound full-file blame split. Press `<CR>` on a row to view
   that commit's diff. Same key closes it.
-- **`<leader>bh`** — Baka git history. Last 20 commits touching the
-  current file in a centered popup. In visual mode, scopes to the
-  selected line range (`git log -L`).
+- **`<leader>bh`** — Baka git history. Centered popup showing commits
+  that touch the current file, with the active branch in the title
+  (`history file.lua [main]`). Scroll near the bottom to lazy-load older
+  commits — 20 at a time, up to 100 total. In visual mode, scopes to
+  the selected line range (`git log -L`).
 - **`<leader>bo`** — Baka git open in remote. Opens the current line
   (or visual range) in the browser on GitHub or GitLab. Resolves SSH
   host aliases from `~/.ssh/config`, so SSO setups work.
@@ -106,6 +108,10 @@ require("baka").setup({
     host_map = {
       -- ["github-work"] = "github.com",
     },
+  },
+  history = {
+    page_size = 20,  -- commits loaded initially, and per scroll-page
+    max       = 100, -- hard cap on total commits the popup will fetch
   },
 })
 ```

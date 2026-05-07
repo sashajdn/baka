@@ -14,6 +14,10 @@ local defaults = {
     -- entries here take precedence.
     host_map = {},
   },
+  history = {
+    page_size = 20,  -- commits loaded initially and per scroll-page
+    max       = 100, -- hard cap; popup stops fetching past this
+  },
 }
 
 M.config = defaults
@@ -50,6 +54,7 @@ function M.setup(opts)
   M.config = opts
   require("baka.highlights").setup()
   require("baka.remote").setup(opts.remote)
+  require("baka.history").setup(opts.history)
   set_keymaps(opts.keymaps)
 end
 
