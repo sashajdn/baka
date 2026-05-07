@@ -17,12 +17,21 @@ vim.api.nvim_create_user_command("Baka", function(opts)
     end
   elseif sub == "remote" then
     require("baka.remote").open()
+  elseif sub == "diff" then
+    require("baka.diff").toggle(opts.fargs[2])
+  elseif sub == "changes" then
+    require("baka.diff").changes(opts.fargs[2])
   else
-    vim.notify("Baka: subcommands: blame | line | history | remote", vim.log.levels.INFO)
+    vim.notify("Baka: subcommands: blame | line | history | remote | diff [ref] | changes [ref]", vim.log.levels.INFO)
   end
 end, {
-  nargs = 1,
+  nargs = "+",
   range = true,
-  complete = function() return { "blame", "line", "history", "remote" } end,
-  desc = "baka.nvim: blame | line | history | remote",
+  complete = function(arglead, cmdline)
+    if cmdline:match("^Baka%s+%S*$") then
+      return { "blame", "line", "history", "remote", "diff", "changes" }
+    end
+    return {}
+  end,
+  desc = "baka.nvim: blame | line | history | remote | diff | changes",
 })
