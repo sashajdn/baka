@@ -18,6 +18,16 @@ remote-open — in floating popups that inherit your colorscheme.
 - **`<leader>bo`** — Baka git open in remote. Opens the current line
   (or visual range) in the browser on GitHub or GitLab. Resolves SSH
   host aliases from `~/.ssh/config`, so SSO setups work.
+- **`<leader>bd`** — Baka git diff vs master. Side-by-side native diff
+  against `master` (fallback `main` / `origin/master` / `origin/main`).
+  Opaque, theme-aligned line backgrounds — no `+`/`-` markers. The base
+  side auto-refreshes when you navigate to another file in the head
+  window. `]c` / `[c` jump hunks; `do` / `dp` transfer; `q` or `<leader>bd`
+  again closes.
+- **`<leader>bc`** — Baka git changes vs master. PR walker: builds a
+  quickfix list of every file changed since the merge-base with master
+  (committed, staged, unstaged), opens diff on the first one. Walk the
+  list with `]q` / `[q` — each jump auto-refreshes the base side.
 
 `q` or `<Esc>` closes any popup.
 
@@ -101,6 +111,8 @@ require("baka").setup({
     blame_file = "<leader>bB",
     history    = "<leader>bh",
     remote     = "<leader>bo",
+    diff       = "<leader>bd",
+    changes    = "<leader>bc",
   },
   remote = {
     -- SSH host aliases -> real hostnames. Auto-resolved from ~/.ssh/config;
@@ -125,6 +137,8 @@ always available:
 :Baka history       -- file history popup (also accepts a :range)
 :'<,'>Baka history  -- range-scoped history (git log -L)
 :Baka remote        -- open in browser
+:Baka diff [ref]    -- side-by-side diff vs ref (default: master / main)
+:Baka changes [ref] -- qflist of changed files vs ref + open diff on first
 ```
 
 ## Theming
@@ -143,6 +157,17 @@ standard groups so any colorscheme works out of the box:
 | `BakaNormal`       | `NormalFloat` |
 | `BakaBorder`       | `FloatBorder` |
 | `BakaTitle`        | `FloatTitle`  |
+| `BakaDiffNormal`   | `Normal`      |
+| `BakaDiffAdd`      | `DiffAdd`     |
+| `BakaDiffDelete`   | `DiffDelete`  |
+| `BakaDiffChange`   | `DiffChange`  |
+| `BakaDiffText`     | `DiffText`    |
+
+The `BakaDiff*` groups are applied via `winhighlight` only inside the
+diff windows, so global `Diff*` usage by other plugins is unaffected.
+Override `BakaDiffNormal` with a real `bg` if your colorscheme uses
+transparent backgrounds — that's what makes the diff windows opaque
+without touching the rest of the editor.
 
 Override any of them after `setup()`:
 

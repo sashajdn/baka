@@ -18,6 +18,15 @@ local links = {
   BakaNormal      = "NormalFloat",
   BakaBorder      = "FloatBorder",
   BakaTitle       = "FloatTitle",
+
+  -- Diff (scoped to baka diff windows via winhighlight; the user's other
+  -- Diff* usages are unaffected). Override these to get opaque, theme-aligned
+  -- backgrounds against transparent colorschemes.
+  BakaDiffNormal  = "Normal",
+  BakaDiffAdd     = "DiffAdd",
+  BakaDiffDelete  = "DiffDelete",
+  BakaDiffChange  = "DiffChange",
+  BakaDiffText    = "DiffText",
 }
 
 function M.apply()

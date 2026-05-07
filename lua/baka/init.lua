@@ -7,6 +7,8 @@ local defaults = {
     blame_file = "<leader>bB",
     history    = "<leader>bh",
     remote     = "<leader>bo",
+    diff       = "<leader>bd",
+    changes    = "<leader>bc",
   },
   remote = {
     -- Map SSH host aliases (from ~/.ssh/config) to real hostnames so URL
@@ -47,6 +49,14 @@ local function set_keymaps(k)
     map({ "n", "v" }, k.remote, function() require("baka.remote").open() end,
       { desc = "Baka git open in remote" })
   end
+  if k.diff then
+    map("n", k.diff, function() require("baka.diff").toggle() end,
+      { desc = "Baka git diff vs master (toggle)" })
+  end
+  if k.changes then
+    map("n", k.changes, function() require("baka.diff").changes() end,
+      { desc = "Baka git changes vs master (qflist + diff)" })
+  end
 end
 
 function M.setup(opts)
@@ -64,5 +74,8 @@ M.blame_file  = function() require("baka.blame").file() end
 M.history     = function(opts) require("baka.history").show(opts) end
 M.show_commit = function(sha, file, cwd) require("baka.history").show_commit(sha, file, cwd) end
 M.remote      = function() require("baka.remote").open() end
+M.diff        = function(ref) require("baka.diff").toggle(ref) end
+M.diff_close  = function() require("baka.diff").close() end
+M.changes     = function(ref) require("baka.diff").changes(ref) end
 
 return M
